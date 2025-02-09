@@ -46,3 +46,114 @@ steps:
       inlineScript: |
         # Deploy the Bicep template with the generated SSH public key
         az deployment group create --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="$(sshPublicKey)"
+  - task: HelmInstaller@1
+    displayName: 'Install Helm'
+    inputs:
+      helmVersion: 'latest'
+
+  - task: Kubernetes@1
+    displayName: 'Deploy Grafana using Helm'
+    inputs:
+      connectionType: 'Azure Resource Manager'
+      azureSubscriptionEndpoint: $(azureServiceConnection)
+      azureResourceGroup: $(resourceGroupName)
+      kubernetesCluster: $(aksClusterName)
+      namespace: $(grafanaNamespace)
+      command: 'create'
+  
+  - task: HelmDeploy@0
+    displayName: 'Install Grafana'
+    inputs:
+      connectionType: 'Azure Resource Manager'
+      azureSubscription: $(azureServiceConnection)
+      azureResourceGroup: $(resourceGroupName)
+      kubernetesCluster: $(aksClusterName)
+      namespace: $(grafanaNamespace)
+      command: 'install'
+      chartType: 'stable'
+      chartName: 'grafana'
+      releaseName: 'grafana'
+      arguments: '--set adminPassword=admin'
+
+  - task: Kubernetes@1
+    displayName: 'Deploy Redis using Helm'
+    inputs:
+      connectionType: 'Azure Resource Manager'
+      azureSubscriptionEndpoint: $(azureServiceConnection)
+      azureResourceGroup: $(resourceGroupName)
+      kubernetesCluster: $(aksClusterName)
+      namespace: $(redisNamespace)
+      command: 'create'
+
+  - task: HelmDeploy@0
+    displayName: 'Install Redis'
+    inputs:
+      connectionType: 'Azure Resource Manager'
+      azureSubscription: $(azureServiceConnection)
+      azureResourceGroup: $(resourceGroupName)
+      kubernetesCluster: $(aksClusterName)
+      namespace: $(redisNamespace)
+      command: 'install'
+      chartType: 'stable'
+      chartName: 'redis'
+      releaseName: 'redis'
+      arguments: '--set usePassword=true,password=redispassword'
+
+  - task: Kubernetes@1
+    displayName: 'Create LoadBalancer Services'
+    inputs:
+      connectionType: 'Azure Resource Manager'
+      azureSubscriptionEndpoint: $(azureServiceConnection)
+      azureResourceGroup: $(resourceGroupName)
+      kubernetesCluster: $(aksClusterName)
+      namespace: $(grafanaNamespace)
+      command: 'apply'
+      useConfigurationFile: true
+      configuration: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: grafana-loadbalancer
+          namespace: $(grafanaNamespace)
+        spec:
+          type: LoadBalancer
+          ports:
+            - port: 80
+              targetPort: 3000
+          selector:
+            app.kubernetes.io/name: grafana
+
+  - task: Kubernetes@1
+    displayName: 'Create LoadBalancer Services for Redis'
+    inputs:
+      connectionType: 'Azure Resource Manager'
+      azureSubscriptionEndpoint: $(azureServiceConnection)
+      azureResourceGroup: $(resourceGroupName)
+      kubernetesCluster: $(aksClusterName)
+      namespace: $(redisNamespace)
+      command: 'apply'
+      useConfigurationFile: true
+      configuration: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: redis-loadbalancer
+          namespace: $(redisNamespace)
+        spec:
+          type: LoadBalancer
+          ports:
+            - port: 6379
+              targetPort: 6379
+          selector:
+            app.kubernetes.io/name: redis
+
+  - task: AzureCLI@2
+    displayName: 'Output Grafana and Redis Passwords'
+    inputs:
+      azureSubscription: $(azureServiceConnection)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        echo "Grafana Admin Password: admin"
+        
+        echo "Redis Password: redispassword"
