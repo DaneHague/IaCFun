@@ -5,7 +5,7 @@ param functionApp1Name string = 'testFunctionApp1-xyz123'
 param functionApp2Name string = 'testFunctionApp2-xyz123'
 param serviceBusNamespaceName string = 'testServiceBusNamespace-xyz123'
 param appInsightsName string = 'myAppInsights'
-param keyVaultName string = 'testKeyVault-xyz1233'
+param keyVaultName string = 'testKeyVault-xyz2323'
 param storageAccountName string = 'mystorageaccountjj3424'
 param aksClusterName string = 'myAKSCluster'
 param sshPublicKey string
