@@ -2,7 +2,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  azureServiceConnection: 'github.com_DaneHague'
+  azureServiceConnection: 'Visual Studio Enterprise with MSDN(345d42b9-5ca1-4189-a6d8-a8c32fe22d98)'
   subscriptionId: '345d42b9-5ca1-4189-a6d8-a8c32fe22d98'
   resourceGroupName: 'deploymentTest'
   resourceGroupLocation: 'UKSouth'
@@ -40,7 +40,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Deploy Bicep Template'
     inputs:
-      azureSubscription: '$(azureServiceConnection)'
+      azureSubscription: $(azureServiceConnection)
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
