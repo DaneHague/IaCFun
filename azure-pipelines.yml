@@ -54,15 +54,18 @@ steps:
     inputs:
       helmVersion: 'latest'
 
-  - task: Kubernetes@1
-    displayName: 'Deploy Grafana using Helm'
+  - task: AzureCLI@2
+    displayName: 'Create Namespaces'
     inputs:
-      connectionType: 'Azure Resource Manager'
-      azureSubscriptionEndpoint: $(azureServiceConnection)
-      azureResourceGroup: $(resourceGroupName)
-      kubernetesCluster: $(aksClusterName)
-      namespace: $(grafanaNamespace)
-      command: 'create'
+      azureSubscription: $(azureServiceConnection)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Get AKS credentials
+        az aks get-credentials --resource-group $(resourceGroupName) --name $(aksClusterName) --overwrite-existing
+        
+        kubectl create namespace $(grafanaNamespace) || true
+        kubectl create namespace $(redisNamespace) || true
   
   - task: HelmDeploy@0
     displayName: 'Install Grafana'
@@ -77,16 +80,6 @@ steps:
       chartName: 'grafana/grafana'
       releaseName: 'grafana'
       arguments: '--set adminPassword=admin --set service.type=LoadBalancer'
-
-  - task: Kubernetes@1
-    displayName: 'Deploy Redis using Helm'
-    inputs:
-      connectionType: 'Azure Resource Manager'
-      azureSubscriptionEndpoint: $(azureServiceConnection)
-      azureResourceGroup: $(resourceGroupName)
-      kubernetesCluster: $(aksClusterName)
-      namespace: $(redisNamespace)
-      command: 'create'
 
   - task: HelmDeploy@0
     displayName: 'Install Redis'
