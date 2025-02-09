@@ -62,7 +62,7 @@ steps:
       azureResourceGroup: $(resourceGroupName)
       kubernetesCluster: $(aksClusterName)
       namespace: $(grafanaNamespace)
-      command: 'createNamespace'
+      command: 'create'
   
   - task: HelmDeploy@0
     displayName: 'Install Grafana'
