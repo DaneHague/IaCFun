@@ -40,7 +40,7 @@ steps:
   - task: AzureCLI@2
     displayName: 'Deploy Bicep Template'
     inputs:
-      azureSubscription: $(azureServiceConnection)
+      azureSubscription: '$(azureServiceConnection)'
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
