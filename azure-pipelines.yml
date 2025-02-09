@@ -1,0 +1,48 @@
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureServiceConnection: 'github.com_DaneHague'
+  subscriptionId: '345d42b9-5ca1-4189-a6d8-a8c32fe22d98'
+  resourceGroupName: 'deploymentTest'
+  resourceGroupLocation: 'UKSouth'
+  location: 'UKSouth'
+  appServicePlanName: 'myAppServicePlan111'
+  functionApp1Name: 'testFunctionApp1-xyz123'
+  functionApp2Name: 'testFunctionApp2-xyz123'
+  serviceBusNamespaceName: 'testServiceBusNamespace-xyz123'
+  appInsightsName: 'myAppInsights'
+  keyVaultName: 'testKeyVault-xyz1233'
+  storageAccountName: 'mystorageaccountjj3424'
+  aksClusterName: 'myAKSCluster'
+
+steps:
+  - task: Bash@3
+    displayName: 'Generate SSH Key Pair'
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Generate SSH key pair
+        ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
+        
+        echo "##vso[task.setvariable variable=sshPublicKey]$(cat id_rsa.pub)"
+
+  - task: AzureCLI@2
+    displayName: 'Create Resource Group'
+    inputs:
+      azureSubscription: $(azureServiceConnection)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Create the resource group using Bicep
+        az deployment sub create --location $(resourceGroupLocation) --template-file group.bicep --parameters resourceGroupName=$(resourceGroupName) resourceGroupLocation=$(resourceGroupLocation)
+
+  - task: AzureCLI@2
+    displayName: 'Deploy Bicep Template'
+    inputs:
+      azureSubscription: $(azureServiceConnection)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Deploy the Bicep template with the generated SSH public key
+        az deployment group create --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="$(sshPublicKey)"
