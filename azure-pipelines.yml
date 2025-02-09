@@ -15,6 +15,9 @@ variables:
   keyVaultName: 'testKeyVault-xyz1233'
   storageAccountName: 'mystorageaccountjj3424'
   aksClusterName: 'myAKSCluster'
+  grafanaNamespace: 'grafana'
+  redisNamespace: 'redis'
+
 
 steps:
   - task: Bash@3
