@@ -62,7 +62,7 @@ steps:
       azureResourceGroup: $(resourceGroupName)
       kubernetesCluster: $(aksClusterName)
       namespace: $(grafanaNamespace)
-      command: 'create'
+      command: 'createNamespace'
   
   - task: HelmDeploy@0
     displayName: 'Install Grafana'
@@ -73,10 +73,10 @@ steps:
       kubernetesCluster: $(aksClusterName)
       namespace: $(grafanaNamespace)
       command: 'install'
-      chartType: 'stable'
-      chartName: 'grafana'
+      chartType: 'repository'
+      chartName: 'grafana/grafana'
       releaseName: 'grafana'
-      arguments: '--set adminPassword=admin'
+      arguments: '--set adminPassword=admin --set service.type=LoadBalancer'
 
   - task: Kubernetes@1
     displayName: 'Deploy Redis using Helm'
