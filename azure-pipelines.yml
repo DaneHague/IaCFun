@@ -16,7 +16,7 @@ variables:
   storageAccountName: 'mystorageaccountjj3424'
   aksClusterName: 'myAKSCluster'
   grafanaNamespace: 'grafana'
-  redisNamespace: 'redis'
+  redisNamespace: 'redis-master'
 
 
 steps:
