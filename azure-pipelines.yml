@@ -108,20 +108,6 @@ steps:
         echo "Grafana Admin Password: admin"
 
   - task: AzureCLI@2
-    displayName: 'Install Redis'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        # Install Redis using Helm
-        helm install redis bitnami/redis \
-          --namespace $(redisNamespace) \
-          --set usePassword=true,password=redispassword \
-          --set service.type=ClusterIP \
-          --set service.port=6379
-
-  - task: AzureCLI@2
     displayName: 'Apply Redis LoadBalancer Service'
     inputs:
       azureSubscription: $(azureServiceConnection)
