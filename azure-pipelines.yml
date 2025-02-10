@@ -81,8 +81,9 @@ steps:
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        # Add Grafana Helm repository
+        # Add Helm repositories
         helm repo add grafana https://grafana.github.io/helm-charts
+        helm repo add bitnami https://charts.bitnami.com/bitnami
         helm repo update
 
   - task: AzureCLI@2
