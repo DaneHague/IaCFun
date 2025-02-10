@@ -118,18 +118,18 @@ steps:
         helm install redis bitnami/redis \
           --namespace $(redisNamespace) \
           --set usePassword=true,password=redispassword \
-          --set service.type=LoadBalancer \
+          --set service.type=ClusterIP \
           --set service.port=6379
 
   - task: AzureCLI@2
-    displayName: 'Verify Redis Service'
+    displayName: 'Apply Redis LoadBalancer Service'
     inputs:
       azureSubscription: $(azureServiceConnection)
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        # Verify Redis service
-        kubectl get svc redis -n $(redisNamespace)
+        # Apply the redis-service.yaml to set up the LoadBalancer
+        kubectl apply -f redis-service.yaml -n $(redisNamespace)
 
 
   - task: AzureCLI@2
