@@ -117,54 +117,6 @@ steps:
         # Install Redis using Helm
         helm install redis bitnami/redis --namespace $(redisNamespace) --set usePassword=true,password=redispassword --set service.type=LoadBalancer
 
-  - task: Kubernetes@1
-    displayName: 'Create LoadBalancer Services'
-    inputs:
-      connectionType: 'Azure Resource Manager'
-      azureSubscriptionEndpoint: $(azureServiceConnection)
-      azureResourceGroup: $(resourceGroupName)
-      kubernetesCluster: $(aksClusterName)
-      namespace: $(grafanaNamespace)
-      command: 'apply'
-      useConfigurationFile: true
-      configuration: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: grafana-loadbalancer
-          namespace: $(grafanaNamespace)
-        spec:
-          type: LoadBalancer
-          ports:
-            - port: 80
-              targetPort: 3000
-          selector:
-            app.kubernetes.io/name: grafana
-
-  - task: Kubernetes@1
-    displayName: 'Create LoadBalancer Services for Redis'
-    inputs:
-      connectionType: 'Azure Resource Manager'
-      azureSubscriptionEndpoint: $(azureServiceConnection)
-      azureResourceGroup: $(resourceGroupName)
-      kubernetesCluster: $(aksClusterName)
-      namespace: $(redisNamespace)
-      command: 'apply'
-      useConfigurationFile: true
-      configuration: |
-        apiVersion: v1
-        kind: Service
-        metadata:
-          name: redis-loadbalancer
-          namespace: $(redisNamespace)
-        spec:
-          type: LoadBalancer
-          ports:
-            - port: 6379
-              targetPort: 6379
-          selector:
-            app.kubernetes.io/name: redis
-
   - task: AzureCLI@2
     displayName: 'Output Grafana and Redis Passwords'
     inputs:
