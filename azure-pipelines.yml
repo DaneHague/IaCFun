@@ -108,14 +108,14 @@ steps:
         echo "Grafana Admin Password: admin"
 
   - task: AzureCLI@2
-    displayName: 'Apply Redis LoadBalancer Service'
+    displayName: 'Install Redis'
     inputs:
       azureSubscription: $(azureServiceConnection)
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        # Apply the redis-service.yaml to set up the LoadBalancer
-        kubectl apply -f redis-service.yaml -n $(redisNamespace)
+        # Install Redis using Helm
+        helm install my-redis bitnami/redis --namespace $(redisNamespace) --set service.type=LoadBalancer
 
 
   - task: AzureCLI@2
@@ -126,5 +126,3 @@ steps:
       scriptLocation: 'inlineScript'
       inlineScript: |
         echo "Grafana Admin Password: admin"
-        
-        echo "Redis Password: redispassword"
