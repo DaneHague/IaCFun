@@ -93,7 +93,7 @@ steps:
       scriptLocation: 'inlineScript'
       inlineScript: |
         # Install Grafana using Helm
-        helm install grafana grafana/grafana --namespace $(grafanaNamespace) --set adminPassword=admin --set service.type=LoadBalancer
+        helm install grafana grafana/grafana --namespace $(grafanaNamespace) --set adminPassword=admin --set service.type=LoadBalancer --set service.port=3000
 
   - task: AzureCLI@2
     displayName: 'Output Grafana Admin Password'
@@ -105,19 +105,15 @@ steps:
         # Output Grafana admin password
         echo "Grafana Admin Password: admin"
 
-  - task: HelmDeploy@0
+  - task: AzureCLI@2
     displayName: 'Install Redis'
     inputs:
-      connectionType: 'Azure Resource Manager'
       azureSubscription: $(azureServiceConnection)
-      azureResourceGroup: $(resourceGroupName)
-      kubernetesCluster: $(aksClusterName)
-      namespace: $(redisNamespace)
-      command: 'install'
-      chartType: 'stable'
-      chartName: 'redis'
-      releaseName: 'redis'
-      arguments: '--set usePassword=true,password=redispassword'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Install Redis using Helm
+        helm install redis bitnami/redis --namespace $(redisNamespace) --set usePassword=true,password=redispassword --set service.type=LoadBalancer
 
   - task: Kubernetes@1
     displayName: 'Create LoadBalancer Services'
