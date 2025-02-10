@@ -16,7 +16,7 @@ variables:
   storageAccountName: 'mystorageaccountjj3424'
   aksClusterName: 'myAKSCluster'
   grafanaNamespace: 'grafana'
-  redisNamespace: 'redis-master'
+  redisNamespace: 'redis'
 
 
 steps:
@@ -115,7 +115,22 @@ steps:
       scriptLocation: 'inlineScript'
       inlineScript: |
         # Install Redis using Helm
-        helm install redis bitnami/redis --namespace $(redisNamespace) --set usePassword=true,password=redispassword --set service.type=LoadBalancer --set service.port=6379
+        helm install redis bitnami/redis \
+          --namespace $(redisNamespace) \
+          --set usePassword=true,password=redispassword \
+          --set service.type=LoadBalancer \
+          --set service.port=6379
+
+  - task: AzureCLI@2
+    displayName: 'Verify Redis Service'
+    inputs:
+      azureSubscription: $(azureServiceConnection)
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # Verify Redis service
+        kubectl get svc redis -n $(redisNamespace)
+
 
   - task: AzureCLI@2
     displayName: 'Output Grafana and Redis Passwords'
