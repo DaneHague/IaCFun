@@ -73,6 +73,7 @@ steps:
       inlineScript: |
         # Create namespace for Grafana
         kubectl create namespace $(grafanaNamespace) || true
+        kubectl create namespace $(redisNamespace) || true
 
   - task: AzureCLI@2
     displayName: 'Add Helm Repositories'
