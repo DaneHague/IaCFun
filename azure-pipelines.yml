@@ -54,21 +54,6 @@ stages:
                 # Create the resource group using Bicep
                 az deployment sub create --location $(resourceGroupLocation) --template-file group.bicep --parameters resourceGroupName=$(resourceGroupName) resourceGroupLocation=$(resourceGroupLocation)
 
-  - stage: WhatIfDeployment
-    displayName: 'What-If Deployment'
-    jobs:
-      - job: WhatIf
-        steps:
-          - task: AzureCLI@2
-            displayName: 'What-If Bicep Template'
-            inputs:
-              azureSubscription: $(azureServiceConnection)
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                # Perform a what-if operation to preview changes
-                az deployment group what-if --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="$(sshPublicKey)"
-
   - stage: Approval
     displayName: 'Approval'
     jobs:
