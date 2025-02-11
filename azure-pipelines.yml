@@ -84,7 +84,6 @@ steps:
       inlineScript: |
         # Add Helm repositories
         helm repo add grafana https://grafana.github.io/helm-charts
-        helm repo add bitnami https://charts.bitnami.com/bitnami
         helm repo update
 
   - task: AzureCLI@2
@@ -108,15 +107,13 @@ steps:
         echo "Grafana Admin Password: admin"
 
   - task: AzureCLI@2
-    displayName: 'Install Redis'
+    displayName: 'Deploy Redis Service'
     inputs:
       azureSubscription: $(azureServiceConnection)
       scriptType: 'bash'
       scriptLocation: 'inlineScript'
       inlineScript: |
-        # Install Redis using Helm
-        helm install my-redis bitnami/redis --namespace $(redisNamespace) --set service.type=LoadBalancer
-
+        kubectl apply -f redis-service.yaml --namespace $(redisNamespace)
 
   - task: AzureCLI@2
     displayName: 'Output Grafana and Redis Passwords'
