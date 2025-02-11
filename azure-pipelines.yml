@@ -17,6 +17,7 @@ variables:
   aksClusterName: 'myAKSCluster'
   grafanaNamespace: 'grafana'
   redisNamespace: 'redis'
+  sshPublicKey:
 
 stages:
   - stage: GenerateSSHKey
