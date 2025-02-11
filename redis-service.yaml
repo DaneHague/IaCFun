@@ -1,12 +1,26 @@
-apiVersion: v1
-kind: Service
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: redis-loadbalancer
+  name: my-redis
   namespace: redis
 spec:
-  type: LoadBalancer
-  ports:
-    - port: 6379
-      targetPort: 6379
+  replicas: 1
   selector:
-    app.kubernetes.io/name: redis
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:latest
+        ports:
+        - containerPort: 6379
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: my-redis-secret
+              key: redis-password
