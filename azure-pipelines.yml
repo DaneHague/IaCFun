@@ -18,108 +18,149 @@ variables:
   grafanaNamespace: 'grafana'
   redisNamespace: 'redis'
 
+stages:
+  - stage: GenerateSSHKey
+    displayName: 'Generate SSH Key'
+    jobs:
+      - job: GenerateKey
+        steps:
+          - task: Bash@3
+            displayName: 'Generate SSH Key Pair'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Generate SSH key pair
+                ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
+                
+                echo "##vso[task.setvariable variable=sshPublicKey]$(cat id_rsa.pub)"
 
-steps:
-  - task: Bash@3
-    displayName: 'Generate SSH Key Pair'
-    inputs:
-      targetType: 'inline'
-      script: |
-        # Generate SSH key pair
-        ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
-        
-        echo "##vso[task.setvariable variable=sshPublicKey]$(cat id_rsa.pub)"
+  - stage: ResourceGroupSetup
+    displayName: 'Setup Resource Group'
+    jobs:
+      - job: CreateResourceGroup
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Create Resource Group'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Create the resource group using Bicep
+                az deployment sub create --location $(resourceGroupLocation) --template-file group.bicep --parameters resourceGroupName=$(resourceGroupName) resourceGroupLocation=$(resourceGroupLocation)
 
-  - task: AzureCLI@2
-    displayName: 'Create Resource Group'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        # Create the resource group using Bicep
-        az deployment sub create --location $(resourceGroupLocation) --template-file group.bicep --parameters resourceGroupName=$(resourceGroupName) resourceGroupLocation=$(resourceGroupLocation)
+  - stage: WhatIfDeployment
+    displayName: 'What-If Deployment'
+    jobs:
+      - job: WhatIf
+        steps:
+          - task: AzureCLI@2
+            displayName: 'What-If Bicep Template'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Perform a what-if operation to preview changes
+                az deployment group what-if --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="$(sshPublicKey)"
 
-  - task: AzureCLI@2
-    displayName: 'Deploy Bicep Template'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        # Deploy the Bicep template with the generated SSH public key
-        az deployment group create --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="$(sshPublicKey)"
-  - task: HelmInstaller@1
-    displayName: 'Install Helm'
-    inputs:
-      helmVersion: 'latest'
+  - stage: Approval
+    displayName: 'Approval'
+    jobs:
+      - job: ManualApproval
+        pool: server
+        steps:
+          - task: ManualValidation@0
+            inputs:
+              notifyUsers: |
+                danehague1@googlemail.com
+              instructions: 'Please validate the build configuration and resume'
+              onTimeout: 'resume'
+            timeoutInMinutes: 30
 
-  - task: AzureCLI@2
-    displayName: 'Configure kubectl'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        # Get AKS credentials
-        az aks get-credentials --resource-group $(resourceGroupName) --name $(aksClusterName) --overwrite-existing
 
-  - task: AzureCLI@2
-    displayName: 'Create Namespace for Grafana'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        # Create namespace for Grafana
-        kubectl create namespace $(grafanaNamespace) || true
-        kubectl create namespace $(redisNamespace) || true
+  - stage: DeployResources
+    displayName: 'Deploy Resources'
+    jobs:
+      - job: Deploy
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Deploy Bicep Template'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Deploy the Bicep template with the generated SSH public key
+                az deployment group create --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="$(sshPublicKey)"
 
-  - task: AzureCLI@2
-    displayName: 'Add Helm Repositories'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        # Add Helm repositories
-        helm repo add grafana https://grafana.github.io/helm-charts
-        helm repo update
+  - stage: ConfigureKubernetes
+    displayName: 'Configure Kubernetes'
+    jobs:
+      - job: Configure
+        steps:
+          - task: HelmInstaller@1
+            displayName: 'Install Helm'
+            inputs:
+              helmVersion: 'latest'
 
-  - task: AzureCLI@2
-    displayName: 'Install Grafana'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        # Install Grafana using Helm
-        helm install grafana grafana/grafana --namespace $(grafanaNamespace) --set adminPassword=admin --set service.type=LoadBalancer --set service.port=3000
+          - task: AzureCLI@2
+            displayName: 'Configure kubectl'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Get AKS credentials
+                az aks get-credentials --resource-group $(resourceGroupName) --name $(aksClusterName) --overwrite-existing
 
-  - task: AzureCLI@2
-    displayName: 'Output Grafana Admin Password'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        # Output Grafana admin password
-        echo "Grafana Admin Password: admin"
+          - task: AzureCLI@2
+            displayName: 'Create Namespace for Grafana'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Create namespace for Grafana
+                kubectl create namespace $(grafanaNamespace) || true
+                kubectl create namespace $(redisNamespace) || true
 
-  - task: AzureCLI@2
-    displayName: 'Deploy Redis Service'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        kubectl apply -f redis-service.yaml --namespace $(redisNamespace)
+          - task: AzureCLI@2
+            displayName: 'Add Helm Repositories'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Add Helm repositories
+                helm repo add grafana https://grafana.github.io/helm-charts
+                helm repo update
 
-  - task: AzureCLI@2
-    displayName: 'Output Grafana and Redis Passwords'
-    inputs:
-      azureSubscription: $(azureServiceConnection)
-      scriptType: 'bash'
-      scriptLocation: 'inlineScript'
-      inlineScript: |
-        echo "Grafana Admin Password: admin"
+          - task: AzureCLI@2
+            displayName: 'Install Grafana'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Install Grafana using Helm
+                helm install grafana grafana/grafana --namespace $(grafanaNamespace) --set adminPassword=admin --set service.type=LoadBalancer --set service.port=3000
+
+          - task: AzureCLI@2
+            displayName: 'Output Grafana Admin Password'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Output Grafana admin password
+                echo "Grafana Admin Password: admin"
+
+          - task: AzureCLI@2
+            displayName: 'Output Grafana and Redis Passwords'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                echo "Grafana Admin Password: admin"
