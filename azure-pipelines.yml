@@ -31,8 +31,8 @@ stages:
               script: |
                 # Generate SSH key pair
                 ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
-                
-                echo "##vso[task.setvariable variable=sshPublicKey]$(cat id_rsa.pub)"
+
+                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$(cat id_rsa.pub)"
 
   - stage: CompareKeys
     displayName: 'Compare SSH Public Keys'
