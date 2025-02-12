@@ -37,6 +37,7 @@ stages:
                 publicKey=$(cat id_rsa.pub)
                 
                 # Set the public key as an output variable
+                echo "##vso[task.setvariable variable=testKey;isOutput=true]TEST123"
                 echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$publicKey"
 
                 # Debugging output
@@ -49,10 +50,10 @@ stages:
       - job: CompareKeysJob
         displayName: 'Compare SSH Keys'
         variables:
-          sshPublicKey: $[ dependencies.GenerateKey.outputs['sshPublicKey'] ]
+          sshPublicKey: $[ dependencies.GenerateKey.outputs['testKey'] ]
         steps:
           - script: |
-              echo "Generated SSH Public Key: $(sshPublicKey)"
+              echo "Generated SSH Public Key: $(testKey)"
             displayName: 'Compare SSH Public Keys'
 
 
