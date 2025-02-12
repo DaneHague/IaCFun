@@ -50,7 +50,7 @@ stages:
       - job: CompareKeysJob
         displayName: 'Compare SSH Keys'
         variables:
-          sshPublicKey: $[ dependencies.GenerateKey.outputs['testKey'] ]
+          testKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.testKey'] ]
         steps:
           - script: |
               echo "Generated SSH Public Key: $(testKey)"
