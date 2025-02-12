@@ -32,16 +32,16 @@ stages:
                 # Generate SSH key pair without passphrase
                 ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
                 
-                # Read the public key and add a newline character at the end
+                # Read the public key and format it with \n
                 publicKey=$(cat id_rsa.pub)
-                publicKeyWithNewline="${publicKey}\n"
+                formattedPublicKey=$(echo "$publicKey" | sed 's/ /\\n/g')
                 
-                # Set the public key as an output variable
-                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$publicKeyWithNewline"
+                # Set the formatted public key as an output variable
+                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$formattedPublicKey"
 
           - script: |
-              echo "SSH Public Key: $(sshPublicKey)"
-            displayName: 'Debug SSH Public Key'
+              echo "Formatted SSH Public Key: $(sshPublicKey)"
+            displayName: 'Debug Formatted SSH Public Key'
 
   - stage: ResourceGroupSetup
     displayName: 'Setup Resource Group'
