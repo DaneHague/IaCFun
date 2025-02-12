@@ -80,6 +80,9 @@ stages:
         variables:
           sshPublicKey: $[ stageDependencies.GenerateSSHKey.GenerateKey.outputs['TestTask1.sshPublicKey'] ]
         steps:
+          - script: |
+              echo "SSH Public Key for What-If: $(sshPublicKey)"
+            displayName: 'Echo SSH Public Key'
           - task: AzureCLI@2
             displayName: 'What-If Bicep Template'
             inputs:
@@ -113,6 +116,9 @@ stages:
         variables:
           sshPublicKey: $[ stageDependencies.GenerateSSHKey.GenerateKey.outputs['TestTask1.sshPublicKey'] ]
         steps:
+          - script: |
+              echo "SSH Public Key for Deployment: $(sshPublicKey)"
+            displayName: 'Echo SSH Public Key'
           - task: AzureCLI@2
             displayName: 'Deploy Bicep Template'
             inputs:
