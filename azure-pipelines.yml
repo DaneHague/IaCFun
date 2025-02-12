@@ -38,9 +38,18 @@ stages:
                 # Set the public key as an output variable
                 echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$publicKey"
 
+  - stage: CompareKeys
+    displayName: 'Compare SSH Public Keys'
+    dependsOn: GenerateSSHKey
+    jobs:
+      - job: CompareKeysJob
+        variables:
+          sshPublicKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.sshPublicKey'] ]
+        steps:
           - script: |
               echo "Generated SSH Public Key: $(sshPublicKey)"
             displayName: 'Compare SSH Public Keys'
+
 
   - stage: ResourceGroupSetup
     displayName: 'Setup Resource Group'
@@ -74,7 +83,7 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 # Perform a what-if operation to preview changes
-                az deployment group what-if --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDtDArALqxVy909h+qPBMyFHFOe4/KsBb5bU5FAMRy9TSSx7ACrnFrSStOZwKsEdwMKXbufBtf6mv4wAL6i/79ebs3bn8nLUBQU3rAtM/Hh7faG0gyLaGurkSUeaQsn7mu1Gm6QL3oXassyrKJk1aJQFsdvWYpVO1E8Q0dDiehdAZwDDe9dKsDNiXMTMZhit2QiCp2mROaFodI9CUBdqm9nXXSqueMSD2E9XytJAfMzVy6dOashB8BTLRgf1llIwl/qXVzOD4U0NlgGRzMzDgtiNU4EzHw0gYAv3qQRzW0tl5+0PhmVYCGRH6mvOJ/6GgxZT1igJniIpX+epuZufrJvKwv3eO6DKs5FTxR6AbWxXNiyEJ9qfFbNSeM3WFEKoymfbSKDqxiPuPwkUFVQpaxjF2uFEBiTldVCei0QDVH4dnelAeqAXb/twghPdN99nQLyWvpgs0Bp7CSh90qSfo3GRAJwPROdkQGW8TCsVpa0sxWGBh1LS8bpUnlNRy5/78MwtmxFopxf6elIRuiP44LI65shfEcKirFHNvDP6JR/R9trVKvF+pxnbt3uyeJkR8ifPGen8CwK+ZL+b6roqcLEpUiFk+2QH2qsbUyCeGD7y8FTw3QVS0xK7YbP9ZBSKWM1tmtrwiiJf+phQvDzw4NFndwHFdkps65LN9/xV9d7KQ== danehague1@googlemail.com"
+                az deployment group what-if --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey=$"(sshPublicKey)"
 
   - stage: Approval
     displayName: 'Approval'
