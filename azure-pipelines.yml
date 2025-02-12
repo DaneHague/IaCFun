@@ -74,7 +74,10 @@ stages:
 
   - stage: WhatIfDeployment
     displayName: 'What-If Deployment'
-    dependsOn: ResourceGroupSetup
+    dependsOn: 
+      - ResourceGroupSetup
+      - GenerateSSHKey
+    
     jobs:
       - job: WhatIf
         variables:
