@@ -53,8 +53,6 @@ stages:
         steps:
           - script: |
               echo "Generated SSH Public Key: $(sshPublicKey)"
-              echo "Local SSH Public Key:"
-              cat /path/to/your/local/id_rsa.pub
             displayName: 'Compare SSH Public Keys'
 
 
