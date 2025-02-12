@@ -29,14 +29,10 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                # Generate SSH key pair without passphrase
+                # Generate SSH key pair
                 ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
                 
-                # Read the public key
-                publicKey=$(cat id_rsa.pub)
-                
-                # Set the public key as an output variable
-                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$publicKey"
+                echo "##vso[task.setvariable variable=sshPublicKey]$(cat id_rsa.pub)"
 
   - stage: CompareKeys
     displayName: 'Compare SSH Public Keys'
