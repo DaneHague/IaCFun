@@ -40,11 +40,6 @@ stages:
               echo "SSH Public Key: $(sshPublicKey)"
             displayName: 'Debug SSH Public Key'
 
-  - stage: ResourceGroupSetup
-    displayName: 'Setup Resource Group'
-    jobs:
-      - job: CreateResourceGroup
-        steps:
           - task: AzureCLI@2
             displayName: 'Create Resource Group'
             inputs:
