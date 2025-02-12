@@ -29,22 +29,18 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                # Generate SSH key pair
-                ssh-keygen -t rsa -b 4096 -f aksCluster -N "" -C "azure-pipeline"
+                # Generate SSH key pair without passphrase
+                ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
                 
-                # Read the keys
-                privateKey=$(cat aksCluster)
-                publicKey=$(cat aksCluster.pub)
-                
-                # Create JSON output
-                json="{\"keyInfo\":{\"privateKey\":\"$privateKey\",\"publicKeys\":[{\"keyData\":\"$publicKey\"}]}}"
+                # Read the public key
+                publicKey=$(cat id_rsa.pub)
                 
                 # Set the public key as an output variable
-                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$json"
+                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$publicKey"
 
           - script: |
-              echo "SSH Public Key JSON: $(sshPublicKey)"
-            displayName: 'Debug SSH Public Key JSON'
+              echo "SSH Public Key: $(sshPublicKey)"
+            displayName: 'Debug SSH Public Key'
 
   - stage: ResourceGroupSetup
     displayName: 'Setup Resource Group'
