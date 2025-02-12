@@ -45,7 +45,7 @@ stages:
           sshPublicKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.sshPublicKey'] ]
         steps:
           - script: |
-              echo "Generated SSH Public Key: $(sshPublicKey)"
+              echo "Generated SSH Public Keytt: $(cat id_rsa.pub)"
             displayName: 'Compare SSH Public Keys'
 
 
