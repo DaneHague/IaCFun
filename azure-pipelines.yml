@@ -56,8 +56,6 @@ stages:
               echo "Generated SSH Public Key: $(sshPublicKey)"
             displayName: 'Compare SSH Public Keys'
 
-
-
   - stage: ResourceGroupSetup
     displayName: 'Setup Resource Group'
     dependsOn: GenerateSSHKey
@@ -80,7 +78,7 @@ stages:
     jobs:
       - job: WhatIf
         variables:
-          sshPublicKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.sshPublicKey'] ]
+          sshPublicKey: $[ stageDependencies.GenerateSSHKey.GenerateKey.outputs['TestTask1.sshPublicKey'] ]
         steps:
           - task: AzureCLI@2
             displayName: 'What-If Bicep Template'
@@ -90,7 +88,7 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 # Perform a what-if operation to preview changes
-                az deployment group what-if --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey=$"(sshPublicKey)"
+                az deployment group what-if --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="$(sshPublicKey)"
 
   - stage: Approval
     displayName: 'Approval'
@@ -113,7 +111,7 @@ stages:
     jobs:
       - job: Deploy
         variables:
-          sshPublicKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.sshPublicKey'] ]
+          sshPublicKey: $[ stageDependencies.GenerateSSHKey.GenerateKey.outputs['TestTask1.sshPublicKey'] ]
         steps:
           - task: AzureCLI@2
             displayName: 'Deploy Bicep Template'
