@@ -30,17 +30,25 @@ stages:
               targetType: 'inline'
               script: |
                 # Generate SSH key pair
-                ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
+                ssh-keygen -t rsa -b 4096 -f aksCluster -N "" -C "azure-pipeline"
+                
+                # Read the keys
+                privateKey=$(cat aksCluster)
+                publicKey=$(cat aksCluster.pub)
+                
+                # Create JSON output
+                json="{\"keyInfo\":{\"privateKey\":\"$privateKey\",\"publicKeys\":[{\"keyData\":\"$publicKey\"}]}}"
                 
                 # Set the public key as an output variable
-                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$(cat id_rsa.pub)"
+                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$json"
 
           - script: |
-              echo "SSH Public Key: $(sshPublicKey)"
-            displayName: 'Debug SSH Public Key'
+              echo "SSH Public Key JSON: $(sshPublicKey)"
+            displayName: 'Debug SSH Public Key JSON'
 
   - stage: ResourceGroupSetup
     displayName: 'Setup Resource Group'
+    dependsOn: GenerateSSHKey
     jobs:
       - job: CreateResourceGroup
         steps:
@@ -56,7 +64,7 @@ stages:
 
   - stage: WhatIfDeployment
     displayName: 'What-If Deployment'
-    dependsOn: GenerateSSHKey
+    dependsOn: ResourceGroupSetup
     jobs:
       - job: WhatIf
         variables:
@@ -74,6 +82,7 @@ stages:
 
   - stage: Approval
     displayName: 'Approval'
+    dependsOn: WhatIfDeployment
     jobs:
       - job: ManualApproval
         pool: server
@@ -88,7 +97,7 @@ stages:
 
   - stage: DeployResources
     displayName: 'Deploy Resources'
-    dependsOn: GenerateSSHKey
+    dependsOn: Approval
     jobs:
       - job: Deploy
         variables:
@@ -106,6 +115,7 @@ stages:
 
   - stage: ConfigureKubernetes
     displayName: 'Configure Kubernetes'
+    dependsOn: DeployResources
     jobs:
       - job: Configure
         steps:
