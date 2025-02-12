@@ -17,7 +17,6 @@ variables:
   aksClusterName: 'myAKSCluster'
   grafanaNamespace: 'grafana'
   redisNamespace: 'redis'
-  sshPublicKey:
 
 stages:
   - stage: GenerateSSHKey
@@ -33,13 +32,18 @@ stages:
                 # Generate SSH key pair
                 ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
                 
-                # Set the public key as a pipeline variable
-                echo "##vso[task.setvariable variable=sshPublicKey]$(cat id_rsa.pub)"
+                # Set the public key as an output variable
+                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$(cat id_rsa.pub)"
 
           - script: |
               echo "SSH Public Key: $(sshPublicKey)"
             displayName: 'Debug SSH Public Key'
 
+  - stage: ResourceGroupSetup
+    displayName: 'Setup Resource Group'
+    jobs:
+      - job: CreateResourceGroup
+        steps:
           - task: AzureCLI@2
             displayName: 'Create Resource Group'
             inputs:
@@ -49,6 +53,24 @@ stages:
               inlineScript: |
                 # Create the resource group using Bicep
                 az deployment sub create --location $(resourceGroupLocation) --template-file group.bicep --parameters resourceGroupName=$(resourceGroupName) resourceGroupLocation=$(resourceGroupLocation)
+
+  - stage: WhatIfDeployment
+    displayName: 'What-If Deployment'
+    dependsOn: GenerateSSHKey
+    jobs:
+      - job: WhatIf
+        variables:
+          sshPublicKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.sshPublicKey'] ]
+        steps:
+          - task: AzureCLI@2
+            displayName: 'What-If Bicep Template'
+            inputs:
+              azureSubscription: $(azureServiceConnection)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Perform a what-if operation to preview changes
+                az deployment group what-if --resource-group $(resourceGroupName) --template-file main.bicep --parameters sshPublicKey="$(sshPublicKey)"
 
   - stage: Approval
     displayName: 'Approval'
@@ -66,8 +88,11 @@ stages:
 
   - stage: DeployResources
     displayName: 'Deploy Resources'
+    dependsOn: GenerateSSHKey
     jobs:
       - job: Deploy
+        variables:
+          sshPublicKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.sshPublicKey'] ]
         steps:
           - task: AzureCLI@2
             displayName: 'Deploy Bicep Template'
