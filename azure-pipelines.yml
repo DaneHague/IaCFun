@@ -26,6 +26,7 @@ stages:
         displayName: 'Generate SSH Key'
         steps:
           - task: Bash@3
+            name: TestTask1
             displayName: 'Generate SSH Key Pair'
             inputs:
               targetType: 'inline'
@@ -50,10 +51,10 @@ stages:
       - job: CompareKeysJob
         displayName: 'Compare SSH Keys'
         variables:
-          testKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.testKey'] ]
+          testKey1: $[ dependencies.GenerateSSHKey.outputs['TestTask1.testKey'] ]
         steps:
           - script: |
-              echo "Generated SSH Public Key: $(testKey)"
+              echo "Generated SSH Public Key: $(testKey1)"
             displayName: 'Compare SSH Public Keys'
 
 
