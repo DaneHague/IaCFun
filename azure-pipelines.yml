@@ -38,11 +38,10 @@ stages:
                 publicKey=$(cat id_rsa.pub)
                 
                 # Set the public key as an output variable
-                echo "##vso[task.setvariable variable=testKey;isOutput=true]TEST123"
                 echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$publicKey"
 
                 # Debugging output
-                echo "Generated SSH Public Key1: $publicKey"
+                echo "Generated SSH Public Key: $publicKey"
 
   - stage: CompareKeys
     displayName: 'Compare SSH Public Keys'
@@ -51,11 +50,12 @@ stages:
       - job: CompareKeysJob
         displayName: 'Compare SSH Keys'
         variables:
-          testKey1: $[ dependencies.GenerateSSHKey.outputs['TestTask1.testKey'] ]
+          sshPublicKey: $[ stageDependencies.GenerateSSHKey.GenerateKey.outputs['TestTask1.sshPublicKey'] ]
         steps:
           - script: |
-              echo "Generated SSH Public Key: $(testKey1)"
+              echo "Generated SSH Public Key: $(sshPublicKey)"
             displayName: 'Compare SSH Public Keys'
+
 
 
   - stage: ResourceGroupSetup
