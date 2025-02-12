@@ -23,29 +23,38 @@ stages:
     displayName: 'Generate SSH Key'
     jobs:
       - job: GenerateKey
+        displayName: 'Generate SSH Key'
         steps:
           - task: Bash@3
             displayName: 'Generate SSH Key Pair'
             inputs:
               targetType: 'inline'
               script: |
-                # Generate SSH key pair
+                # Generate SSH key pair without passphrase
                 ssh-keygen -t rsa -b 4096 -f id_rsa -N "" -C "azure-pipeline"
+                
+                # Read the public key
+                publicKey=$(cat id_rsa.pub)
+                
+                # Set the public key as an output variable
+                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$publicKey"
 
-                echo "Generated SSH Public Key1: $(cat id_rsa.pub)"
-                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$(cat id_rsa.pub)"
-                echo "Generated SSH Public Key2: $(sshPublicKey)"
+                # Debugging output
+                echo "Generated SSH Public Key1: $publicKey"
 
   - stage: CompareKeys
     displayName: 'Compare SSH Public Keys'
     dependsOn: GenerateSSHKey
     jobs:
       - job: CompareKeysJob
+        displayName: 'Compare SSH Keys'
         variables:
           sshPublicKey: $[ dependencies.GenerateSSHKey.outputs['GenerateKey.sshPublicKey'] ]
         steps:
           - script: |
-              echo "Generated SSH Public Keytt: $(cat id_rsa.pub)"
+              echo "Generated SSH Public Key: $(sshPublicKey)"
+              echo "Local SSH Public Key:"
+              cat /path/to/your/local/id_rsa.pub
             displayName: 'Compare SSH Public Keys'
 
 
