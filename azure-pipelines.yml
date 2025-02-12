@@ -113,7 +113,9 @@ stages:
 
   - stage: DeployResources
     displayName: 'Deploy Resources'
-    dependsOn: Approval
+    dependsOn: 
+      - Approval
+      - GenerateSSHKey
     jobs:
       - job: Deploy
         variables:
