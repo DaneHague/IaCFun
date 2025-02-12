@@ -37,7 +37,7 @@ stages:
                 publicKey=$(cat id_rsa.pub)
                 
                 # Set the public key as an output variable
-                echo "##vso[task.setvariable variable=sshPublicKey;isOutput=true]$publicKey"
+                echo "##vso[job.task.setvariable variable=sshPublicKey;isOutput=true]$publicKey"
 
                 # Debugging output
                 echo "Generated SSH Public Key1: $publicKey"
